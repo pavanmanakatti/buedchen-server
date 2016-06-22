@@ -1,13 +1,20 @@
 package io.ullrich.buedchen.server;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.util.Objects;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Content {
 
     private String url;
     private Integer showtime;
     private String header;
     private String description;
+
+    public Content() {
+
+    }
 
     public Content(String url, Integer showtime) {
         this.url = url;

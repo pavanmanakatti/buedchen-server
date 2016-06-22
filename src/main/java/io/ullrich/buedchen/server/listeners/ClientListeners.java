@@ -3,19 +3,15 @@ package io.ullrich.buedchen.server.listeners;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.eventbus.Subscribe;
-import io.ullrich.buedchen.server.Channels;
-import io.ullrich.buedchen.server.Clients;
-import io.ullrich.buedchen.server.Content;
-import io.ullrich.buedchen.server.EventBusWrapper;
-import io.ullrich.buedchen.server.events.client.AssignClient;
-import io.ullrich.buedchen.server.events.client.ClientAssigned;
-import io.ullrich.buedchen.server.events.client.ClientConnected;
-import io.ullrich.buedchen.server.events.client.ClientDisconnected;
-import io.ullrich.buedchen.server.events.client.UpdateClientContent;
-import java.util.HashMap;
-import java.util.Map;
-import javax.websocket.Session;
+import io.ullrich.buedchen.server.*;
+import io.ullrich.buedchen.server.events.client.*;
 import org.slf4j.LoggerFactory;
+
+import javax.websocket.Session;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class ClientListeners {
 
@@ -24,7 +20,7 @@ public class ClientListeners {
     private final EventBusWrapper eventBus;
     private final Clients clients;
     private final Channels channels;
-    private final Map<String, Session> sessions = new HashMap<>();
+    private final Map<String, List<Session>> sessions = new HashMap<>();
     private ObjectMapper mapper = new ObjectMapper();
 
     public ClientListeners(EventBusWrapper eventBus, Channels channels, Clients clients) {
@@ -35,17 +31,31 @@ public class ClientListeners {
 
     @Subscribe
     public void clientAssigned(ClientAssigned clientAssigned) {
-
+        String channelId = this.clients.getClient(clientAssigned.getClientId()).getChannelId();
+        if (this.channels.getChannels().containsKey(channelId) && !this.channels.getChannelContents(channelId).isEmpty()) {
+            Content content = this.channels.getChannelContents(channelId).get(this.channels.getChannel(channelId).getContentPtr());
+            this.eventBus.post(new UpdateClientContent(clientAssigned.getClientId(), content));
+        }
     }
 
     @Subscribe
     public void clientConnected(ClientConnected clientConnected) {
-        sessions.put(clientConnected.getClientId(), clientConnected.getSession());
-        if (this.clients.getClientIds().contains(clientConnected.getClientId())) {
+        if(!sessions.containsKey(clientConnected.getClientId())) {
+            sessions.put(clientConnected.getClientId(), new ArrayList<>());
+        }
+
+        sessions.get(clientConnected.getClientId()).add(clientConnected.getSession());
+
+        if (!this.clients.getClientIds().contains(clientConnected.getClientId())) {
             this.clients.addClient(clientConnected.getClientId());
         }
+
         String channelId = this.clients.getClient(clientConnected.getClientId()).getChannelId();
         if (this.channels.getChannels().containsKey(channelId) && !this.channels.getChannelContents(channelId).isEmpty()) {
+            Content content = this.channels.getChannelContents(channelId).get(this.channels.getChannel(channelId).getContentPtr());
+            this.eventBus.post(new UpdateClientContent(clientConnected.getClientId(), content));
+        } else {
+            channelId = "UNASSIGNED";
             Content content = this.channels.getChannelContents(channelId).get(this.channels.getChannel(channelId).getContentPtr());
             this.eventBus.post(new UpdateClientContent(clientConnected.getClientId(), content));
         }
@@ -53,7 +63,7 @@ public class ClientListeners {
 
     @Subscribe
     public void clientDisconnected(ClientDisconnected clientDisconnected) {
-        sessions.remove(clientDisconnected.getClientId());
+        sessions.get(clientDisconnected.getClientId()).remove(clientDisconnected.getSession());
     }
 
     @Subscribe
@@ -69,13 +79,31 @@ public class ClientListeners {
     }
 
     @Subscribe
-    public void messageClient(UpdateClientContent updateClientContent) {
-        Session session = sessions.get(updateClientContent.getClientId());
-        try {
-            session.getAsyncRemote().sendText(mapper.writeValueAsString(updateClientContent.getContent()));
-        } catch (JsonProcessingException ex) {
-            logger.error("Could not convert content to json", ex);
+    public void messageClientToContent(UpdateClientContent updateClientContent) {
+        if (!sessions.containsKey(updateClientContent.getClientId())) {
+            return;
+        }
+        for (Session session : sessions.get(updateClientContent.getClientId())) {
+            try {
+                EventWrapper wrapper = new EventWrapper("content", updateClientContent.getContent());
+                session.getAsyncRemote().sendText(mapper.writeValueAsString(wrapper));
+            } catch (JsonProcessingException ex) {
+                logger.error("Could not convert content to json", ex);
+            }
         }
     }
 
+    @Subscribe
+    public void pingClient(PingClient pingClient) {
+        for (String clientId : sessions.keySet()) {
+            for (Session session : sessions.get(clientId)) {
+                EventWrapper wrapper = new EventWrapper("ping", "empty");
+                try {
+                    session.getAsyncRemote().sendText(mapper.writeValueAsString(wrapper));
+                } catch (JsonProcessingException ex) {
+                    logger.error("Could not convert content to json", ex);
+                }
+            }
+        }
+    }
 }

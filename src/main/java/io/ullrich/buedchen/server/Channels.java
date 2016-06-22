@@ -9,7 +9,7 @@ import java.util.Map;
 
 public class Channels {
 
-    private final Map<String, Channel> channels = Collections.synchronizedMap(new HashMap<String, Channel>());
+    private final Map<String, Channel> channels = Collections.synchronizedMap(new HashMap<>());
 
     public Channels() {
     }

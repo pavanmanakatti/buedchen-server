@@ -8,8 +8,12 @@ import io.ullrich.buedchen.server.events.channel.ChannelCreated;
 import io.ullrich.buedchen.server.events.channel.ChannelRemoved;
 import io.ullrich.buedchen.server.events.channel.ChannelUpdated;
 import io.ullrich.buedchen.server.events.channel.CreateChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ChannelListeners {
+
+    private static final Logger logger = LoggerFactory.getLogger(ChannelListeners.class);
 
     private final EventBusWrapper eventBus;
     private final Channels channels;

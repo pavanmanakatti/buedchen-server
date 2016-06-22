@@ -1,44 +1,46 @@
 package io.ullrich.buedchen.server;
 
-import javax.websocket.CloseReason;
-import javax.websocket.OnClose;
-import javax.websocket.OnError;
-import javax.websocket.OnMessage;
-import javax.websocket.OnOpen;
-import javax.websocket.Session;
-import javax.websocket.server.PathParam;
-import javax.websocket.server.ServerEndpoint;
+import io.ullrich.buedchen.server.events.client.ClientConnected;
+import io.ullrich.buedchen.server.events.client.ClientDisconnected;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Singleton;
+import javax.websocket.*;
+import javax.websocket.server.PathParam;
+import javax.websocket.server.ServerEndpoint;
+
+@Singleton
 @ServerEndpoint(value = "/schedule/{clientId}")
 public class Websocket {
 
     private static final Logger logger = LoggerFactory.getLogger(Websocket.class);
 
+    private ResourcesSingleton resources;
     private final EventBusWrapper eventBus;
 
-    public Websocket(EventBusWrapper eventBus) {
-        this.eventBus = eventBus;
-
+    public Websocket() {
+        resources = ResourcesSingleton.getInstance();
+        this.eventBus = resources.getEventBus();
     }
 
     @OnClose
     public void onWebSocketClose(@PathParam("clientId") String clientId, Session session, CloseReason close) {
-//        eventBus.post(new ClientDisconnected(clientId, session));
         logger.debug("Client {} disconnected: {} - {}", clientId, close.getCloseCode(), close.getReasonPhrase());
+        eventBus.post(new ClientDisconnected(clientId, session));
     }
 
     @OnOpen
     public void onWebSocketOpen(@PathParam("clientId") String clientId, Session session) {
         logger.debug("WebSocket Connect: {}", session);
-        session.getAsyncRemote().sendText("Welcome " + clientId);
-        //     eventBus.post(new ClientConnected(clientId, session));
+        eventBus.post(new ClientConnected(clientId, session));
     }
 
     @OnError
-    public void onWebSocketError(@PathParam("clientId") String clientId, Throwable cause) {
+    public void onWebSocketError(@PathParam("clientId") String clientId, Session session, Throwable cause) {
         logger.warn("WebSocket Error: {}", clientId, cause);
+        eventBus.post(new ClientDisconnected(clientId, session));
+
     }
 
     @OnMessage

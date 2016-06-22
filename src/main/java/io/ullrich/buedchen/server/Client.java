@@ -1,15 +1,23 @@
 package io.ullrich.buedchen.server;
 
-import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Client {
 
     private static final Logger logger = LoggerFactory.getLogger(Client.class);
 
-    private final String clientId;
+    @JsonProperty("client_id")
+    private String clientId;
+    @JsonProperty("channel_id")
     private String channelId;
+
+    public Client(){}
 
     public Client(String clientId) {
         this.clientId = clientId;

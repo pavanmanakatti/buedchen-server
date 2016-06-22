@@ -1,14 +1,5 @@
 package io.ullrich.buedchen.server;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import static com.google.common.base.Preconditions.checkNotNull;
-import com.google.common.eventbus.EventBus;
 import io.ullrich.buedchen.server.events.channel.ChannelCreated;
 import io.ullrich.buedchen.server.events.channel.ChannelRemoved;
 import io.ullrich.buedchen.server.events.channel.ChannelUpdated;
@@ -16,13 +7,18 @@ import io.ullrich.buedchen.server.events.client.ClientAssigned;
 import io.ullrich.buedchen.server.events.content.ChannelContentAdded;
 import io.ullrich.buedchen.server.events.content.ChannelContentRemoved;
 import io.ullrich.buedchen.server.events.content.ChannelContentUpdated;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.core.Response;
+import io.ullrich.buedchen.server.exceptions.ChannelAlreadyExistsException;
 
+import javax.inject.Singleton;
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+
+@Singleton
 @Path("/v1")
 public class REST {
 
@@ -31,26 +27,22 @@ public class REST {
     private final Channels channels;
 
     public REST() {
-        this.eventBus = new EventBusWrapper(new EventBus());
-        this.clients = null;
-        this.channels = null;
-    }
+        ResourcesSingleton singleton = ResourcesSingleton.getInstance();
+        this.channels = singleton.getChannels();
+        this.clients = singleton.getClients();
+        this.eventBus = singleton.getEventBus();
 
-    public REST(EventBusWrapper eventBus, Clients clients, Channels channels) {
-        this.eventBus = eventBus;
-        this.clients = clients;
-        this.channels = channels;
     }
 
     @GET
     @Path("/clients")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Client> getClientIds() {
+    public Response getClientIds() {
         List<Client> clientList = new ArrayList<>();
         for (String id : clients.getClientIds()) {
             clientList.add(clients.getClient(id));
         }
-        return clientList;
+        return Response.ok(clientList).build();
     }
 
     @PUT
@@ -58,26 +50,49 @@ public class REST {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response assignClient(@PathParam("clientId") String clientId, Client client) {
         checkNotNull(client);
-        this.clients.addClient(clientId, client.getChannelId());
-        this.eventBus.post(new ClientAssigned(clientId, client.getChannelId()));
-        return Response.ok().build();
+        if(this.clients.getClientIds().contains(clientId)) {
+            this.clients.getClient(clientId).setChannelId(client.getChannelId());
+            this.eventBus.post(new ClientAssigned(clientId, client.getChannelId()));
+            return Response.ok().build();
+        } else {
+            this.clients.addClient(clientId, client.getChannelId());
+            this.eventBus.post(new ClientAssigned(clientId, client.getChannelId()));
+            return Response.ok().build();
+        }
+
     }
 
     @GET
     @Path("/channels")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Channel> getChannels() {
-        return new ArrayList<Channel>(this.channels.getChannels().values());
+    public Response getChannels() {
+
+        List<Channel> channels = new ArrayList<>(this.channels.getChannels().values());
+        return Response.ok(channels).build();
+    }
+
+    @GET
+    @Path("/channels/{channelId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getChannel(@PathParam("channelId") String channelId) {
+        if (!this.channels.getChannels().containsKey(channelId)) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        return Response.ok(this.channels.getChannel(channelId)).build();
     }
 
     @POST
-    @Path("/channels/")
+    @Path("/channels")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createChannel(Channel channel) {
         checkNotNull(channel);
-        this.channels.addChannel(channel);
-        this.eventBus.post(new ChannelCreated(channel));
-        return Response.ok().build();
+        try {
+            this.channels.addChannel(channel);
+            this.eventBus.post(new ChannelCreated(channel));
+            return Response.ok().build();
+        } catch(ChannelAlreadyExistsException ex) {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
     }
 
     @PUT
@@ -117,8 +132,8 @@ public class REST {
     @GET
     @Path("/channels/{channelId}/contents/{contentId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Content getChannelContent(@PathParam("channelId") String channelId, @PathParam("contentId") Integer contentId) {
-        return this.channels.getChannelContents(channelId).get(contentId);
+    public Response getChannelContent(@PathParam("channelId") String channelId, @PathParam("contentId") Integer contentId) {
+        return Response.ok(this.channels.getChannelContents(channelId).get(contentId)).build();
     }
 
     @POST
@@ -153,7 +168,7 @@ public class REST {
     public Response deleteChannelContent(@PathParam("channelId") String channelId,
             @PathParam("contentId") Integer contentId) {
         if (!this.channels.getChannels().containsKey(channelId)
-                || !this.channels.getChannelContents(channelId).contains(contentId)) {
+                || this.channels.getChannelContents(channelId).get(contentId) == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
         Content content = this.channels.getChannelContents(channelId).get(contentId);
@@ -163,7 +178,7 @@ public class REST {
     }
 
     @GET
-    @Path("unassigned")
+    @Path("/unassigned")
     @Produces(MediaType.TEXT_HTML)
     public String getUnassigned() {
         return "<html><head></head>Client not assigned to a channel</html>";
