@@ -9,6 +9,8 @@ public class Content {
 
     private String url;
     private Integer showtime;
+    private String title;
+
     private String header;
     private String description;
 
@@ -16,14 +18,16 @@ public class Content {
 
     }
 
-    public Content(String url, Integer showtime) {
+    public Content(String url, Integer showtime, String title) {
         this.url = url;
         this.showtime = showtime;
+        this.title = title;
     }
 
-    public Content(String url, Integer showtime, String header, String description) {
+    public Content(String url, Integer showtime, String title, String header, String description) {
         this.url = url;
         this.showtime = showtime;
+        this.title = title;
         this.header = header;
         this.description = description;
     }
@@ -60,6 +64,14 @@ public class Content {
         this.description = description;
     }
 
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
     @Override
     public int hashCode() {
         int hash = 7;
@@ -87,7 +99,7 @@ public class Content {
 
     @Override
     public String toString() {
-        return "Content{" + "url=" + url + ", showtime=" + showtime + ", header=" + header + ", description=" + description + '}';
+        return String.format("Content{ url = %s, showtime = %d, header = %s, description = %s }",url,showtime,header,description);
     }
 
 }

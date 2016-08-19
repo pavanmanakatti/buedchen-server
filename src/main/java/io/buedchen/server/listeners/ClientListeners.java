@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.eventbus.Subscribe;
 import io.buedchen.server.*;
 import io.buedchen.server.events.client.*;
-import io.ullrich.buedchen.server.*;
+import io.buedchen.server.*;
 import org.slf4j.LoggerFactory;
 
 import javax.websocket.Session;
@@ -33,15 +33,16 @@ public class ClientListeners {
     @Subscribe
     public void clientAssigned(ClientAssigned clientAssigned) {
         String channelId = this.clients.getClient(clientAssigned.getClientId()).getChannelId();
-        if (this.channels.getChannels().containsKey(channelId) && !this.channels.getChannelContents(channelId).isEmpty()) {
-            Content content = this.channels.getChannelContents(channelId).get(this.channels.getChannel(channelId).getContentPtr());
+        if (this.channels.getChannels().containsKey(channelId) && !this.channels.getChannelContents(channelId)
+                .isEmpty()) {
+            Content content = this.channels.getChannel(channelId).getNextContent();
             this.eventBus.post(new UpdateClientContent(clientAssigned.getClientId(), content));
         }
     }
 
     @Subscribe
     public void clientConnected(ClientConnected clientConnected) {
-        if(!sessions.containsKey(clientConnected.getClientId())) {
+        if (!sessions.containsKey(clientConnected.getClientId())) {
             sessions.put(clientConnected.getClientId(), new ArrayList<>());
         }
 
@@ -52,12 +53,13 @@ public class ClientListeners {
         }
 
         String channelId = this.clients.getClient(clientConnected.getClientId()).getChannelId();
-        if (this.channels.getChannels().containsKey(channelId) && !this.channels.getChannelContents(channelId).isEmpty()) {
-            Content content = this.channels.getChannelContents(channelId).get(this.channels.getChannel(channelId).getContentPtr());
+        if (this.channels.getChannels().containsKey(channelId) && !this.channels.getChannelContents(channelId)
+                .isEmpty()) {
+            Content content = this.channels.getChannel(channelId).getNextContent();
             this.eventBus.post(new UpdateClientContent(clientConnected.getClientId(), content));
         } else {
             channelId = "UNASSIGNED";
-            Content content = this.channels.getChannelContents(channelId).get(this.channels.getChannel(channelId).getContentPtr());
+            Content content = this.channels.getChannel(channelId).getNextContent();
             this.eventBus.post(new UpdateClientContent(clientConnected.getClientId(), content));
         }
     }
@@ -73,8 +75,9 @@ public class ClientListeners {
             this.clients.addClient(assignClient.getClientId());
         }
         String channelId = this.clients.getClient(assignClient.getClientId()).getChannelId();
-        if (this.channels.getChannels().containsKey(channelId) && !this.channels.getChannelContents(channelId).isEmpty()) {
-            Content content = this.channels.getChannelContents(channelId).get(this.channels.getChannel(channelId).getContentPtr());
+        if (this.channels.getChannels().containsKey(channelId) && !this.channels.getChannelContents(channelId)
+                .isEmpty()) {
+            Content content = this.channels.getChannel(channelId).getNextContent();
             this.eventBus.post(new UpdateClientContent(assignClient.getClientId(), content));
         }
     }

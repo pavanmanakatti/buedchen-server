@@ -2,6 +2,7 @@ package io.buedchen.server;
 
 import io.buedchen.server.exceptions.ClientAlreadyExistsException;
 import io.buedchen.server.exceptions.ClientNotFoundException;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,6 +18,10 @@ public class Clients {
     public Client getClient(String clientId) {
         ensureClientExists(clientId);
         return clients.get(clientId);
+    }
+
+    public Map<String, Client> getClients() {
+        return clients;
     }
 
     public void addClient(String clientId) throws ClientAlreadyExistsException {

@@ -17,7 +17,8 @@ public class Client {
     @JsonProperty("channel_id")
     private String channelId;
 
-    public Client(){}
+    public Client() {
+    }
 
     public Client(String clientId) {
         this.clientId = clientId;

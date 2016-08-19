@@ -2,9 +2,9 @@ package io.buedchen.server;
 
 import io.buedchen.server.exceptions.ChannelAlreadyExistsException;
 import io.buedchen.server.exceptions.ChannelNotFoundException;
+
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class Channels {
@@ -30,59 +30,22 @@ public class Channels {
 
     public void addContentToChannel(String channelId, Content content) {
         ensureChannelExists(channelId);
-        if (!getChannel(channelId).getContents().contains(content)) {
-            getChannel(channelId).getContents().add(content);
+        if (!getChannel(channelId).getContents().containsKey(content.getUrl())) {
+            getChannel(channelId).addContent(content);
             //todo restart etc.
         }
     }
 
-    public List<Content> getChannelContents(String channelId) {
+    public Map<String, Content> getChannelContents(String channelId) {
         ensureChannelExists(channelId);
         return this.channels.get(channelId).getContents();
     }
 
     public void removeContentFromChannel(String channelId, Content content) {
         ensureChannelExists(channelId);
-        if (getChannelContents(channelId).contains(content)) {
-            getChannelContents(channelId).remove(content);
-        }
+        getChannel(channelId).removeContent(content);
     }
 
-    /*    public void addContent(Content content) {
-        this.contents.add(content);
-        if (this.contents.size() == 1) {
-            this.contentPtr.set(0);
-            scheduleContentChange(content.getShowtime());
-        }
-    }*/
- /*
-
-    public Content getCurrentContent() {
-        return this.contents.get(this.contentPtr.get());
-    }
-
-    private Integer getNextContentPointer() {
-        return (this.contentPtr.get() + 1) % this.contents.size();
-    }
-
-    public Content getNextContent() {
-        return this.contents.get(getNextContentPointer());
-    }
-
-    public void updateCurrentContent() {
-        Content next = getNextContent();
-        this.contentPtr.set(getNextContentPointer());
-        scheduleContentChange(next.getShowtime());
-    }
-
-    private void scheduleContentChange(Integer showtime) {
-        this.contentUpdateFuture = scheduler.schedule(new Runnable() {
-            @Override
-            public void run() {
-                updateCurrentContent();
-            }
-        }, showtime, SECONDS);
-    }*/
     private void ensureChannelExists(String channelId) throws ChannelNotFoundException {
         if (!channels.containsKey(channelId)) {
             throw new ChannelNotFoundException("Channel does not exist");
@@ -91,7 +54,7 @@ public class Channels {
 
     private void ensureChannelDoesNotExists(String channelId) throws ChannelAlreadyExistsException {
         if (channels.containsKey(channelId)) {
-            throw new ChannelAlreadyExistsException("Channel does not exist");
+            throw new ChannelAlreadyExistsException("Channel already exists");
         }
     }
 

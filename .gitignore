@@ -2,3 +2,5 @@ target/
 nbactions.xml
 .idea
 *.iml
+.DS_Store
+*log
