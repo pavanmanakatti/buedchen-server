@@ -10,8 +10,7 @@ import io.buedchen.server.events.content.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -37,7 +36,7 @@ public class ChannelContentListeners {
         String channelId = channelContentAdded.getChannelId();
         Content content = channelContentAdded.getContent();
         if (this.channels.getChannelContents(channelId).size() > 1) {
-            this.channels.getChannel(channelId).setContentPtr(0);
+            this.channels.getChannel(channelId).resetIterator();
             this.eventBus.post(new ChannelUpdateCurrentContent(channelId));
         }
     }
@@ -47,7 +46,7 @@ public class ChannelContentListeners {
         String channelId = channelContentRemoved.getChannelId();
         Content content = channelContentRemoved.getContent();
         if (this.channels.getChannelContents(channelId).size() > 1) {
-            this.channels.getChannel(channelId).setContentPtr(0);
+            this.channels.getChannel(channelId).resetIterator();
             this.eventBus.post(new ChannelUpdateCurrentContent(channelId));
         }
     }
@@ -65,18 +64,15 @@ public class ChannelContentListeners {
     public void channelScheduleContentUpdate(ChannelUpdateCurrentContent channelUpdateCurrentContent) {
         String channelId = channelUpdateCurrentContent.getChannelId();
         logger.info("Scheduling content update on {}", channelId);
-        if (!this.channels.getChannels().containsKey(channelId) || this.channels.getChannelContents(channelId).isEmpty()) {
+        if (!this.channels.getChannels().containsKey(channelId) || this.channels.getChannelContents(channelId)
+                .isEmpty()) {
             logger.debug("Not scheduling anything - channel does not exist or has no content");
             return;
         }
 
-        Integer currentPtr = this.channels.getChannel(channelId).getContentPtr();
-        Integer numberOfContents = this.channels.getChannelContents(channelId).size();
-        Integer nextPtr = (currentPtr + 1) % numberOfContents;
-        this.channels.getChannel(channelId).setContentPtr(nextPtr);
-        Content nextContent = this.channels.getChannelContents(channelId).get(nextPtr);
+        Content nextContent = this.channels.getChannel(channelId).getNextContent();
 
-        if(this.channelFutures.containsKey(channelId)) {
+        if (this.channelFutures.containsKey(channelId)) {
             this.channelFutures.get(channelId).cancel(false);
             this.channelFutures.remove(channelId);
         }

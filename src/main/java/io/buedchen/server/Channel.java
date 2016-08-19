@@ -3,12 +3,12 @@ package io.buedchen.server;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableMap;
+import org.apache.http.annotation.Immutable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -24,21 +24,39 @@ public class Channel {
     @JsonProperty("channel_description")
     private String channelDescription;
     @JsonIgnore
-    private List<Content> contents = Collections.synchronizedList(new ArrayList<Content>());
+    private final Map<String, Content> contents = Collections.synchronizedMap(new HashMap<String, Content>());
     @JsonIgnore
     private AtomicInteger contentPtr = new AtomicInteger();
-
     @JsonIgnore
     private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     @JsonIgnore
     private ScheduledFuture<?> contentUpdateFuture;
+    private Iterator<String> iterator;
 
     public Channel() {
     }
-
     public Channel(String channelId, String channelDescription) {
         this.channelId = channelId;
         this.channelDescription = channelDescription;
+        resetIterator();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Channel channel = (Channel) o;
+        return Objects.equals(channelId, channel.channelId) &&
+                Objects.equals(channelDescription, channel.channelDescription);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(channelId, channelDescription);
     }
 
     public String getChannelId() {
@@ -53,20 +71,32 @@ public class Channel {
         this.channelDescription = channelDescription;
     }
 
-    protected List<Content> getContents() {
-        return contents;
+    public Map<String, Content> getContents() {
+        return ImmutableMap.copyOf(this.contents);
     }
 
-    protected void setContents(List<Content> contents) {
-        this.contents = contents;
+    public void addContent(Content content) {
+        this.contents.put(content.getUrl(), content);
+        resetIterator();
     }
 
-    public Integer getContentPtr() {
-        return contentPtr.get();
+    public void removeContent(Content content) {
+        if(this.contents.containsKey(content.getUrl())) {
+            this.contents.remove(content.getUrl());
+        }
+        resetIterator();
     }
 
-    public void setContentPtr(Integer contentPtr) {
-        this.contentPtr.set(contentPtr);
+    public void resetIterator() {
+        this.iterator = this.contents.keySet().iterator();
+    }
+
+    @JsonIgnore
+    public Content getNextContent() {
+        if (!iterator.hasNext()) {
+            resetIterator();
+        }
+        return this.contents.get(iterator.next());
     }
 
 }

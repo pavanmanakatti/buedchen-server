@@ -3,11 +3,11 @@ package io.buedchen.server.listeners;
 import com.google.common.eventbus.Subscribe;
 import io.buedchen.server.Channels;
 import io.buedchen.server.Clients;
+import io.buedchen.server.events.channel.CreateChannel;
 import io.buedchen.server.EventBusWrapper;
 import io.buedchen.server.events.channel.ChannelCreated;
 import io.buedchen.server.events.channel.ChannelRemoved;
 import io.buedchen.server.events.channel.ChannelUpdated;
-import io.buedchen.server.events.channel.CreateChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

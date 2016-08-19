@@ -7,7 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 public class Persistence {
-   public final static String FILENAME = "data.json";
+    public final static String FILENAME = "data.json";
 
     public static void save(PersistenceObject persistenceObject) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
@@ -15,11 +15,11 @@ public class Persistence {
     }
 
     public static PersistenceObject read() throws IOException, FileNotFoundException {
-        File f = new File(Persistence.FILENAME);
-        if(!f.exists()) {
+        File file = new File(Persistence.FILENAME);
+        if (!file.exists()) {
             throw new FileNotFoundException(Persistence.FILENAME);
         }
         ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(f, PersistenceObject.class);
+        return mapper.readValue(file, PersistenceObject.class);
     }
 }

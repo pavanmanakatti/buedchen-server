@@ -1,7 +1,7 @@
 package io.buedchen.server;
 
-import io.buedchen.server.events.client.ClientConnected;
 import io.buedchen.server.events.client.ClientDisconnected;
+import io.buedchen.server.events.client.ClientConnected;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,9 +15,8 @@ import javax.websocket.server.ServerEndpoint;
 public class Websocket {
 
     private static final Logger logger = LoggerFactory.getLogger(Websocket.class);
-
-    private ResourcesSingleton resources;
     private final EventBusWrapper eventBus;
+    private ResourcesSingleton resources;
 
     public Websocket() {
         resources = ResourcesSingleton.getInstance();
