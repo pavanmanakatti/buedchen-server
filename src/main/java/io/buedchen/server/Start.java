@@ -70,7 +70,7 @@ public class Start {
         }, 2, 30, TimeUnit.SECONDS);
 
         Server server = null;
-        server = new BuedchenServer.Builder().restContext().swaggerUIContext().wsContext().build(8080);
+        server = new BuedchenServer.Builder().restContext().swaggerUIContext().wsContext().build(Integer.valueOf(System.getenv("PORT")));
         updateDatabase();
 
         try {
@@ -128,7 +128,7 @@ public class Start {
             channels.addChannel(new Channel("UNASSIGNED", "CLIENT NOT ASSIGNED"));
             Content content = null;
             content = new Content(
-                    "https://docs.google.com/presentation/d/1nvaobOFrc7fjmQhXjYxzfWR2CzMCH1Ar1QY_9VtYzqY/pub?start=true&loop=true&delayms=10000",
+                    "https://docs.google.com/presentation/d/1rR634tq3xFNkxFTGBqP3Oj-npc6VOTAW7V7XAVuuK1I/present?slide=id.p",
                     120, "Unassigned", "Unassigned Channel", "Unassigned");
             channels.addContentToChannel("UNASSIGNED", content);
         } catch (IOException e) {

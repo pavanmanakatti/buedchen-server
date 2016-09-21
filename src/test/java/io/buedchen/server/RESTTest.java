@@ -158,6 +158,20 @@ public class RESTTest extends JerseyTest{
     }
 
     @Test
+    public void updateChannelDeleteTest() throws Exception {
+        Channel channel = new Channel("testChannel","testChannel description");
+        Map<String, Channel> channelMap = new HashMap<String, Channel>();
+        channelMap.put("testChannel", channel);
+
+        when(channels.getChannels()).thenReturn(channelMap);
+
+        Response get = target("v1/channels/testChannel").request().delete();
+        assertThat(get.getStatus(), is(200));
+
+        verify(eventBus,times(1)).post(new ChannelRemoved("testChannel"));
+    }
+
+    @Test
     public void updateChannelPutTest() throws Exception {
 
         Channel channel = new Channel("testChannel","testChannel description");
@@ -176,20 +190,6 @@ public class RESTTest extends JerseyTest{
 
         verify(eventBus,times(1)).post(new ChannelUpdated(channelUpdate));
 
-    }
-
-    @Test
-    public void updateChannelDeleteTest() throws Exception {
-        Channel channel = new Channel("testChannel","testChannel description");
-        Map<String, Channel> channelMap = new HashMap<String, Channel>();
-        channelMap.put("testChannel", channel);
-
-        when(channels.getChannels()).thenReturn(channelMap);
-
-        Response get = target("v1/channels/testChannel").request().delete();
-        assertThat(get.getStatus(), is(200));
-
-        verify(eventBus,times(1)).post(new ChannelRemoved("testChannel"));
     }
 
     @Test
@@ -257,7 +257,7 @@ public class RESTTest extends JerseyTest{
         Response get = target("v1/channels/testChannel/contents").request().post(Entity.entity(jsonString,MediaType.APPLICATION_JSON));
         assertThat(get.getStatus(), is(200));
 
-        verify(eventBus,times(1)).post(new ChannelContentAdded("testChannel",content));
+        verify(eventBus,times(1)).post(new ChannelContentAdded("testChannel", content));
 
     }
 
