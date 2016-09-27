@@ -170,7 +170,8 @@ public class Providers {
         if(!this.projects.getProjects().containsKey(projectId) || this.projects.getProjectDashboards(projectId).get(dashboardUrl) == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        this.projects.getProjectDashboards(projectId).put(dashboardUrl, dashboard);
+        this.projects.updateProjectDashboard(projectId, dashboardUrl, dashboard);
+        //this.projects.getProjectDashboards(projectId).put(dashboardUrl, dashboard);
         this.eventBus.post(new ProjectDashboardUpdated(projectId, dashboardUrl, dashboard));
         return Response.ok().build();
     }

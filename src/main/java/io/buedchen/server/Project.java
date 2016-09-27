@@ -57,4 +57,12 @@ public class Project {
     public void setDashboardStatus(String url, String status) {
         this.dashboards.get(url).setStatus(status);
     }
+
+    public void removeDashboard(String url) {
+        this.dashboards.remove(url);
+    }
+
+    public void updateDashboard(String url, Dashboard dashboard) {
+        this.dashboards.put(url,dashboard);
+    }
 }

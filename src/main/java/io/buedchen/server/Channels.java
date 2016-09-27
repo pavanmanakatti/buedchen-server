@@ -41,6 +41,10 @@ public class Channels {
         return this.channels.get(channelId).getContents();
     }
 
+    public void updateChannelContent(String channelId, String url, Content content) {
+        this.channels.get(channelId).updateContent(url, content);
+    }
+
     public void removeContentFromChannel(String channelId, Content content) {
         ensureChannelExists(channelId);
         getChannel(channelId).removeContent(content);
