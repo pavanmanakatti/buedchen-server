@@ -87,6 +87,10 @@ public class Channel {
         resetIterator();
     }
 
+    public void updateContent(String url, Content content) {
+        this.contents.put(url, content);
+    }
+
     public void resetIterator() {
         this.iterator = this.contents.keySet().iterator();
     }

@@ -217,7 +217,8 @@ public class REST {
         if(!this.channels.getChannels().containsKey(channelId) || this.channels.getChannelContents(channelId).get(contentUrl) == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        this.channels.getChannelContents(channelId).put(contentUrl, content);
+        this.channels.updateChannelContent(channelId, contentUrl, content);
+        //this.channels.getChannelContents(channelId).put(contentUrl, content);
         this.eventBus.post(new ChannelContentUpdated(channelId, contentUrl, content));
         return Response.ok().build();
     }

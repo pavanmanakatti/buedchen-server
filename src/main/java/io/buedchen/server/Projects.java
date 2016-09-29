@@ -41,8 +41,13 @@ public class Projects {
     public void removeDashboardFromProject(String projectId, Dashboard dashboard) {
         ensureProjectExists(projectId);
         if (getProjectDashboards(projectId).containsValue(dashboard)) {
-            getProjectDashboards(projectId).remove(dashboard.getUrl());
+            this.projects.get(projectId).removeDashboard(dashboard.getUrl());
+            //getProjectDashboards(projectId).remove(dashboard.getUrl());
         }
+    }
+
+    public void updateProjectDashboard(String projectId, String url, Dashboard dashboard) {
+        this.projects.get(projectId).updateDashboard(url, dashboard);
     }
 
     private void ensureProjectExists(String projectId) throws ProjectNotFoundException {
